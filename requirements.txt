@@ -1,6 +1,0 @@
-snowflake-connector-python
-pandas
-altair
-plotly
-streamlit
-pathlib
