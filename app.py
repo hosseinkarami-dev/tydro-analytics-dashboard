@@ -810,12 +810,12 @@ try:
     snowflake_credentials = st.secrets["snowflake"]
 
     conn = snowflake.connector.connect(
-        user=snowflake_credentials["user"],
-        password=snowflake_credentials["password"],
-        account=snowflake_credentials["account"],
-        warehouse=snowflake_credentials["warehouse"],
-        database=snowflake_credentials["database"],
-        schema=snowflake_credentials["schema"]
+        user=st.secrets["snowflake"]["user"],
+        password=st.secrets["snowflake"]["password"],
+        account=st.secrets["snowflake"]["account"],
+        warehouse=st.secrets["snowflake"]["warehouse"],
+        database=st.secrets["snowflake"]["database"],
+        schema=st.secrets["snowflake"]["schema"],
     )
 
     # Settings
