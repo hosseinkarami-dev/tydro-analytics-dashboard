@@ -807,15 +807,13 @@ def plot_deposit_size_distribution(conn, condition, period):
     st.altair_chart(chart + text, use_container_width=True)
 
 try:
-    snowflake_credentials = st.secrets["snowflake"]
-
     conn = snowflake.connector.connect(
-        user=st.secrets["snowflake"]["user"],
-        password=st.secrets["snowflake"]["password"],
-        account=st.secrets["snowflake"]["account"],
-        warehouse=st.secrets["snowflake"]["warehouse"],
-        database=st.secrets["snowflake"]["database"],
-        schema=st.secrets["snowflake"]["schema"],
+        user='afonsodiaz',
+        password='cnuppNkP8qk7TNK',
+        account='gob41769.us-east-1',
+        warehouse='INK_ENGINE',
+        database='INK',
+        schema='CORE'
     )
 
     # Settings
