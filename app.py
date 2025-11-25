@@ -137,6 +137,80 @@ def plot_bridge_inflows_outflows_by_chain(conn, condition, period):
 
     st.altair_chart(chart, use_container_width=True)
 
+def plot_liquidity_breakdown_by_tydro_tokens(
+        conn,
+        condition,
+        period
+):
+    query_path="queries/liquidity-breakdown-by-tydro-tokens.sql"
+    results = load_query_data(conn, query_path, condition, period)
+
+    if not results:
+        st.info("No liquidity data returned by the query.")
+        return
+
+    df = pd.DataFrame(results, columns=['SYMBOL', 'LIQUIDITY', 'LIQUIDITY_USD'])
+
+    df.columns = [c.lower() for c in df.columns]
+
+    # Clean text and ensure numeric
+    df['symbol'] = df['symbol'].astype(str).str.strip()
+
+    df = to_num(df, ['liquidity', 'liquidity_usd'])
+
+    # Sort and limit number of bars shown
+    df = df.sort_values('liquidity_usd', ascending=False).reset_index(drop=True)
+    total_tokens = len(df)
+
+    total_liq = df['liquidity_usd'].sum()
+
+    st.subheader("Liquidity breakdown by Tydro token")
+
+    # Defensive: ensure we have a positive max for scale domain
+    max_val = float(df['liquidity_usd'].max()) if df['liquidity_usd'].max() > 0 else 1.0
+
+    chart = (
+        alt.Chart(df)
+        .mark_bar(size=18)
+        .encode(
+            x=alt.X(
+                'liquidity_usd:Q',
+                title='Liquidity (USD)',
+                axis=alt.Axis(format=",.0f"),
+                scale=alt.Scale(domain=[0, max_val * 1.06])
+            ),
+            y=alt.Y(
+                'symbol:N',
+                title='Token',
+                sort=alt.EncodingSortField(field='liquidity_usd', order='descending')  # ensure top token on top
+            ),
+            tooltip=[
+                alt.Tooltip('symbol:N', title='Symbol'),
+                alt.Tooltip('liquidity:Q', title='Liquidity (native)', format=",.2f"),
+                alt.Tooltip('liquidity_usd:Q', title='Liquidity (USD)', format=",.2f"),
+            ],
+            color=alt.Color('symbol:N', legend=None)  # keep deterministic coloring by symbol
+        )
+        .properties(
+            height=500
+        )
+        .interactive()
+    )
+
+    labels = (
+        alt.Chart(df)
+        .mark_text(align='left', dx=4)
+        .encode(
+            x=alt.X('liquidity_usd:Q'),
+            y=alt.Y('symbol:N', sort=alt.EncodingSortField(field='liquidity_usd', order='descending')),
+            text=alt.Text('liquidity_usd:Q', format=",.0f")
+        )
+    )
+
+    st.altair_chart(chart + labels, use_container_width=True)
+
+
+
 def plot_user_flow_sankey(
         conn,
         condition,
@@ -733,13 +807,15 @@ def plot_deposit_size_distribution(conn, condition, period):
     st.altair_chart(chart + text, use_container_width=True)
 
 try:
+    snowflake_credentials = st.secrets["snowflake"]
+
     conn = snowflake.connector.connect(
-        user='afonsodiaz',
-        password='cnuppNkP8qk7TNK',
-        account='gob41769.us-east-1',
-        warehouse='INK_ENGINE',
-        database='INK',
-        schema='CORE'
+        user=snowflake_credentials["user"],
+        password=snowflake_credentials["password"],
+        account=snowflake_credentials["account"],
+        warehouse=snowflake_credentials["warehouse"],
+        database=snowflake_credentials["database"],
+        schema=snowflake_credentials["schema"]
     )
 
     # Settings
@@ -787,6 +863,8 @@ try:
         plot_cex_to_ink_inflow_volume_by_chain(conn, condition, period)
 
     plot_user_flow_sankey(conn, condition, period, preserve='before')
+
+    plot_liquidity_breakdown_by_tydro_tokens(conn, condition, period)
 
 except Exception as e:
     st.error(f"Connection failed: {e}")
