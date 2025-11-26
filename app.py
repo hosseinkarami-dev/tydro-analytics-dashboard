@@ -72,6 +72,41 @@ def plot_cex_to_ink_inflow_volume_by_chain(conn, condition, period):
 
     st.altair_chart(pie, use_container_width=True)
 
+def plot_tydro_users_holdings_on_other_blockchains_by_chain(conn, condition, period):
+    # Load query data
+    query_path = "queries/tydro-users-holdings-on-other-blockchains-by-chain.sql"
+    results = load_query_data(conn, query_path, condition, period)
+
+    if not results:
+        st.info("No data returned for user holdings on other blockchains by chain.")
+        return
+
+    # Convert results to DataFrame and normalize column names to lowercase
+    df = pd.DataFrame(results, columns=['CHAIN', 'BALANCE_USD'])
+    df.columns = [c.lower() for c in df.columns]  # chain, balance_usd
+
+    # Sort data by balance (USD)
+    df = df.sort_values("balance_usd", ascending=False)
+
+    # Plot pie chart
+    st.subheader("Tydro Users Holdings on Other Blockchains by Chain (USD)")
+
+    pie = (
+        alt.Chart(df)
+        .mark_arc(innerRadius=70)
+        .encode(
+            theta=alt.Theta("balance_usd:Q", title="Balance (USD)"),
+            color=alt.Color("chain:N", title="Chain"),
+            tooltip=[
+                alt.Tooltip("chain:N", title="Chain"),
+                alt.Tooltip("balance_usd:Q", title="Balance (USD)", format=",.2f")
+            ]
+        )
+        .properties(width=420, height=420)
+    )
+
+    st.altair_chart(pie, use_container_width=True)
+
 def plot_bridge_inflows_outflows_by_chain(conn, condition, period):
     results = load_query_data(conn, "queries/bridge-inflows-outflows-by-chain.sql", condition, period)
     if not results:
@@ -136,6 +171,62 @@ def plot_bridge_inflows_outflows_by_chain(conn, condition, period):
     )
 
     st.altair_chart(chart, use_container_width=True)
+
+def plot_tydro_users_holdings_on_other_blockchains_by_asset(conn, condition, period):
+    query_path = "queries/tydro-users-holdings-on-other-blockchains-by-asset.sql"
+    results = load_query_data(conn, query_path, condition, period)
+
+    if not results:
+        st.info("No data returned for Tydro users' holdings on other blockchains.")
+        return
+
+    # Create DataFrame and normalize column names
+    df = pd.DataFrame(results, columns=['symbol', 'token_address', 'balance_usd'])
+
+    # Normalize column names to lowercase
+    df.columns = [c.lower() for c in df.columns]
+
+    # Clean text and ensure numeric types
+    df['symbol'] = df['symbol'].astype(str).str.strip()
+    df = to_num(df, ['balance_usd'])
+
+    # Sort by balance_usd (descending)
+    df = df.sort_values('balance_usd', ascending=False).reset_index(drop=True)
+
+    # Subheader for the chart
+    st.subheader("Tydro Users Holdings on Other Blockchains by Asset (Top 20)")
+
+    # Ensure there are no zero balance assets
+    df = df[df['balance_usd'] > 0]
+
+    # Define the chart using Altair
+    chart = (
+        alt.Chart(df)
+        .mark_bar(size=18)
+        .encode(
+            x=alt.X('balance_usd:Q', title='Balance (USD)', axis=alt.Axis(format=",.0f")),
+            y=alt.Y('symbol:N', title='Asset', sort=alt.EncodingSortField(field='balance_usd', order='descending')),
+            tooltip=[
+                alt.Tooltip('symbol:N', title='Asset'),
+                alt.Tooltip('balance_usd:Q', title='Balance (USD)', format=",.2f")
+            ],
+            color=alt.Color('symbol:N', legend=None)  # deterministic color by symbol
+        )
+        .properties(height=420)
+        .interactive()
+    )
+
+    # Add labels on bars
+    labels = (
+        chart.mark_text(align='left', dx=4)
+        .encode(
+            text=alt.Text('balance_usd:Q', format=",.0f")
+        )
+    )
+
+    # Display the chart with labels
+    st.altair_chart(chart + labels, use_container_width=True)
+
 
 def plot_liquidity_breakdown_by_tydro_tokens(
         conn,
@@ -863,6 +954,10 @@ try:
     plot_user_flow_sankey(conn, condition, period, preserve='before')
 
     plot_liquidity_breakdown_by_tydro_tokens(conn, condition, period)
+
+    plot_tydro_users_holdings_on_other_blockchains_by_asset(conn, condition, period)
+
+    plot_tydro_users_holdings_on_other_blockchains_by_chain(conn, condition, period)
 
 except Exception as e:
     st.error(f"Connection failed: {e}")
