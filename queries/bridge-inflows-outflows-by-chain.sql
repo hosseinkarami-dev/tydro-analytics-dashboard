@@ -12,6 +12,7 @@ from
 where
     'ink' = destination_chain
     and token_symbol in ('GHO', 'USDG', 'WETH', 'USD₮0', 'USDT', 'ETH', 'kBTC')
+    and {condition}
 group by 1, 2
 
 union all
@@ -27,7 +28,8 @@ from
 where
     'ink' = source_chain
     and token_symbol in ('GHO', 'USDG', 'WETH', 'USD₮0', 'USDT', 'ETH', 'kBTC')
+    and {condition}
 group by 1, 2
 )
 
-select * from main where {condition} order by direction, chain
+select * from main order by direction, chain
