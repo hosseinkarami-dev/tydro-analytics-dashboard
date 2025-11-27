@@ -8,6 +8,7 @@ from
     ink.core.ez_native_transfers
 where
     from_address in (select distinct address from ink.core.dim_labels where label_type = 'cex')
+    and {condition}
 group by 1
     
 union all
@@ -19,6 +20,7 @@ from
     ink.core.ez_token_transfers
 where
     from_address in (select distinct address from ink.core.dim_labels where label_type = 'cex')
+    and {condition}
 group by 1
 )
 
@@ -31,5 +33,4 @@ join
     ink.core.dim_labels on from_address = address
 where
     label_type = 'cex'
-    and {condition}
 group by 1
