@@ -645,7 +645,7 @@ def tydro_historical_data(conn, condition, period, period_choice):
         # Active users per event
         # ---------------------------
         with col2:
-            st.subheader("Active Users per Event")
+            st.subheader(f"{period_choice} Active Users per Event")
             chart_users = (
                 alt.Chart(df)
                 .mark_bar()
@@ -664,7 +664,7 @@ def tydro_historical_data(conn, condition, period, period_choice):
         # Volume (USD) per event (line)
         # ---------------------------
         with col3:
-            st.subheader("Volume (USD) per Event")
+            st.subheader(f"{period_choice} Volume (USD) per Event")
             chart_volume = (
                 alt.Chart(df)
                 .mark_line(point=True)
