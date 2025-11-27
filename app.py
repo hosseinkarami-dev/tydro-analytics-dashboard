@@ -683,9 +683,6 @@ def tydro_historical_data(conn, condition, period, period_choice):
             )
             st.altair_chart(chart_volume, use_container_width=True)
 
-
-    st.subheader(f"📊 {period_choice} Supply & Borrow Metrics")
-
     # 1st row of charts
     row1_col1, row1_col2, row1_col3 = st.columns(3)
 
